@@ -12,14 +12,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find and Unzip project file
+      - name: List files and Unzip
         run: |
+          echo "=== Root Files ==="
+          ls -la
           mkdir -p project_files
-          # البحث تلقائياً عن أي ملف ZIP وفك ضغطه
           ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
-          echo "Found zip file: $ZIP_FILE"
+          echo "Unzipping: $ZIP_FILE"
           unzip -q "$ZIP_FILE" -d project_files
-          
+          echo "=== Extracted Files ==="
+          ls -la project_files
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -28,12 +31,15 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: |
-          GRADLE_PATH=$(find project_files -name "gradlew" | head -n 1)
+          GRADLE_PATH=$(find . -name "gradlew" | head -n 1)
+          echo "Found gradlew at: $GRADLE_PATH"
           chmod +x "$GRADLE_PATH"
 
       - name: Build Debug APK
         run: |
-          PROJECT_DIR=$(dirname $(find project_files -name "gradlew" | head -n 1))
+          GRADLE_PATH=$(find . -name "gradlew" | head -n 1)
+          PROJECT_DIR=$(dirname "$GRADLE_PATH")
+          echo "Building from directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
           ./gradlew assembleDebug
 
@@ -41,4 +47,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: project_files/**/build/outputs/apk/debug/*.apk
+          path: '**/build/outputs/apk/debug/*.apk'
